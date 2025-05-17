@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,BaseUserManager
 from django.db.models import JSONField
 
+from django.core.exceptions import ValidationError
 
 
 # Create your models here.
@@ -43,6 +44,7 @@ class User(AbstractBaseUser):
     email = models.EmailField(max_length=255,null=True,blank=True)
     isd = models.CharField(max_length=10,default='91')
     mobile = models.CharField(max_length=10)
+    members = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='Members')
 
     password = models.CharField(max_length=220,null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -91,11 +93,17 @@ class Task(models.Model):
         ('Completed', 'Completed'),
     ] 
     status = models.CharField(max_length=10, choices=STATUS, default='Pending')
-    completion_report = models.TextField(max_length=10)
-    start_time = models.DateTimeField(null=True, blank=True)
+    completion_report = models.TextField(max_length=10,null=True,blank=True)
 
-    workin_hours = models.CharField(max_length=220,null=True,blank=True)
+    working_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
  
     def __str__(self):
         return self.title
+    
+    def clean(self):
+        if self.status == 'Completed':
+            if not self.completion_report:
+                raise ValidationError("Completion report is required when task is  Completed.")
+            if self.worked_hours is None:
+                raise ValidationError("Worked hours are required when task is  Completed.")

@@ -38,7 +38,17 @@ class UsersViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
  
-    
+    def get_queryset(self):
+        queryset = self.queryset
+        admin = self.request.query_params.get('admin', None)
+        users = self.request.query_params.get('users', None)
+
+        if admin:
+            queryset = queryset.filter(is_admin=True)
+        if users:
+            queryset =queryset.filter(is_admin=False, is_superuser =False)
+            
+        return queryset
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
@@ -56,11 +66,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
         user = self.request.user
+        completed = self.request.query_params.get('completed', None)
+
         if user.is_admin:
             queryset = queryset.filter(asigned_to__in=user.members.all().values_list('id',flat=True))
         if user.is_admin==False and user.is_superuser ==False:
             queryset =queryset.filter(asigned_to=user.id)
-            
+        if completed:
+            queryset = queryset.filter(status='Completed')
         return queryset
 
     @action(detail=True, methods=['get'], url_path='report')
@@ -113,3 +126,10 @@ def login_page(request):
 
 def user_page(request):
     return render(request, 'users.html')
+
+
+def admin_page(request):
+    return render(request, 'admin.html')
+
+def task_page(request):
+    return render(request, 'task.html')

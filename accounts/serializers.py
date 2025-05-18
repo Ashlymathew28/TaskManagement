@@ -3,10 +3,17 @@ from .models import Task, User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    assigned_user = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields ='__all__'
+
+    def get_task(self,obj):
+        # task = Task
+        return UserMiniSerializer(obj.members,many=True)
+    
+
 class UserMiniSerializer(serializers.ModelSerializer):
 
     class Meta:
